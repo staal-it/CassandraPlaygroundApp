@@ -126,42 +126,6 @@ namespace DatabaseFiller
             }
         }
 
-        private void WriteFilesPerFirstNameLetter()
-        {
-            var fistNames = LoadJson("InputFiles/first-names.json");
-            var lastNames = LoadJson("InputFiles/names.json");
-
-            var completeNames = new List<string>();
-
-            Directory.CreateDirectory("nameFiles");
-
-            string firstnameLetter = fistNames.First().Substring(0, 1);
-            foreach (string fistName in fistNames)
-            {
-                string currentFirstnameLetter = fistName.Substring(0, 1);
-
-                if (currentFirstnameLetter != firstnameLetter)
-                {
-                    var json = JsonConvert.SerializeObject(completeNames);
-
-                    File.WriteAllText("nameFiles/" + firstnameLetter + "-names.json", json);
-
-                    firstnameLetter = currentFirstnameLetter;
-
-                    completeNames.Clear();
-                }
-
-                foreach (var lastName in lastNames)
-                {
-                    var name = fistName + " " + lastName;
-
-                    completeNames.Add(name.Replace("'", "''"));
-                }
-            }
-
-            File.WriteAllText("nameFiles/z-names.json", JsonConvert.SerializeObject(completeNames));
-        }
-
         private void WriteFilesPerFirstAndLastNameLetter()
         {
             Console.WriteLine("Creating input files...");
