@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 
-namespace DatabaseFiller
+namespace CassandraTestApp
 {
     public class Counter : ICounter
     {

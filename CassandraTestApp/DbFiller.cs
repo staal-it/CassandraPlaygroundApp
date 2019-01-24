@@ -1,6 +1,4 @@
-﻿using Cassandra;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -8,16 +6,22 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Cassandra;
+using Newtonsoft.Json;
 
-namespace DatabaseFiller
+namespace CassandraTestApp
 {
     public class DbFiller : IDbFiller
     {
         private readonly ICounter _counter;
+        private readonly ITimedCounterReader _counterReader;
+        private int _numberOfFilesToLoad;
 
-        public DbFiller(ICounter counter)
+        public DbFiller(ICounter counter, ITimedCounterReader counterReader)
         {
             _counter = counter;
+            _counterReader = counterReader;
+            _numberOfFilesToLoad = 182;
         }
 
         public async Task Start()
@@ -31,7 +35,8 @@ namespace DatabaseFiller
 
             PrepareDatabase(session);
 
-            await ConcurrentUtils.ConcurrentUtils.Times(4500, 265, index => ImportFile(session, cq));
+            _counterReader.StartStopWatch();
+            await ConcurrentUtils.ConcurrentUtils.Times(_numberOfFilesToLoad, _numberOfFilesToLoad, index => ImportFile(session, cq));
         }
 
         private List<string> LoadJson(string inputfileName)
@@ -55,7 +60,7 @@ namespace DatabaseFiller
 
             var cq = new ConcurrentQueue<string>();
 
-            foreach (var file in files)
+            foreach (var file in files.Take(_numberOfFilesToLoad))
             {
                 cq.Enqueue(file.Name);
             }
@@ -72,7 +77,7 @@ namespace DatabaseFiller
             var keyspace = "nameslist";
             session.Execute($"DROP KEYSPACE IF EXISTS {keyspace}");
             session.Execute("CREATE KEYSPACE " + keyspace +
-                            " WITH replication = {'class' : 'NetworkTopologyStrategy', 'DC1' : 1 };");
+                            " WITH replication = {'class' : 'NetworkTopologyStrategy', 'DC1' : 2, 'DC2' : 2 };");
 
             session.ChangeKeyspace(keyspace);
 
@@ -83,15 +88,14 @@ namespace DatabaseFiller
         private ISession CreateConnectedSession()
         {
             var e1 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4000);
-
-            //var e2 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4001);
-            //var e3 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4002);
-            //var e4 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4003);
-            //var e5 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4004);
-            //var e6 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4005);
+            var e2 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4001);
+            var e3 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4002);
+            var e4 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4003);
+            var e5 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4004);
+            var e6 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4005);
 
             var cluster = Cluster.Builder()
-                .AddContactPoints(e1)
+                .AddContactPoints(e1, e2, e3, e4, e5, e6)
                 .WithLoadBalancingPolicy(new TokenAwarePolicy(new DCAwareRoundRobinPolicy()))
                 .Build();
 

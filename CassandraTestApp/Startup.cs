@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace DatabaseFiller
+namespace CassandraTestApp
 {
     public class Startup
     {
@@ -8,7 +8,8 @@ namespace DatabaseFiller
         {
             services.AddSingleton<ICounter, Counter>();
             services.AddTransient<IDbFiller, DbFiller>();
-            services.AddTransient<ITimedHostedService, TimedHostedService>();
+            services.AddTransient<IDbReader, DbReader>();
+            services.AddSingleton<ITimedCounterReader, TimedCounterReader>();
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace DatabaseFiller
+namespace CassandraTestApp
 {
-    public interface IDbFiller
+    public interface IDbService
     {
         Task Start();
     }

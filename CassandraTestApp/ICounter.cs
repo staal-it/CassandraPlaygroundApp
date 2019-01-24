@@ -1,4 +1,4 @@
-﻿namespace DatabaseFiller
+﻿namespace CassandraTestApp
 {
     public interface ICounter
     {
