@@ -22,11 +22,11 @@ namespace CassandraTestApp
 
                 var items = _counter.ReadCounter();
 
-                long itemsPerSec = 0;
                 if (_sw.IsRunning && _sw.Elapsed.Seconds > 0)
-                    itemsPerSec = (long) (items / _sw.Elapsed.TotalSeconds);
-
-                Console.WriteLine($"Items in queue: {_counter.ReadCounter()}, per sec: {itemsPerSec}");
+                {
+                    var itemsPerSec = (long)(items / _sw.Elapsed.TotalSeconds);
+                    Console.WriteLine($"Items in queue: {_counter.ReadCounter()}, per sec: {itemsPerSec}");
+                }
             }
         }
 

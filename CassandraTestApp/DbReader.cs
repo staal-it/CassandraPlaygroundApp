@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Cassandra;
+using static System.Int32;
 
 namespace CassandraTestApp
 {
@@ -34,7 +35,9 @@ namespace CassandraTestApp
             _ps.SetConsistencyLevel(ConsistencyLevel.Three);
 
             Console.WriteLine("Loading...");
-            var nrOfThreads = 250;
+            Console.WriteLine("Number of threads?");
+            var readLine = Console.ReadLine();
+            var nrOfThreads = Parse(readLine);
             _counterReader.StartStopWatch();
 
             await ConcurrentUtils.ConcurrentUtils.Times(nrOfThreads, nrOfThreads, index => LoadItemPerKey(session));

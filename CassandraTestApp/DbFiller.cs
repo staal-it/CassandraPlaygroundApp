@@ -1,13 +1,11 @@
-﻿using System;
+﻿using Cassandra;
+using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Cassandra;
-using Newtonsoft.Json;
 
 namespace CassandraTestApp
 {
@@ -15,7 +13,7 @@ namespace CassandraTestApp
     {
         private readonly ICounter _counter;
         private readonly ITimedCounterReader _counterReader;
-        private int _numberOfFilesToLoad;
+        private readonly int _numberOfFilesToLoad;
 
         public DbFiller(ICounter counter, ITimedCounterReader counterReader)
         {
@@ -26,29 +24,20 @@ namespace CassandraTestApp
 
         public async Task Start()
         {
-            //WriteFilesPerFirstAndLastNameLetter();
-            //WriteFilesPerFirstNameLetter();
-
             var cq = LoadFilesInQueue();
 
             var session = CreateConnectedSession();
 
-            PrepareDatabase(session);
+            Console.WriteLine("(Re)Create database? 'y' or 'n'");
+            var readLine = Console.ReadLine();
+
+            if (readLine.ToLower() == "y")
+            {
+                PrepareDatabase(session);
+            }
 
             _counterReader.StartStopWatch();
             await ConcurrentUtils.ConcurrentUtils.Times(_numberOfFilesToLoad, _numberOfFilesToLoad, index => ImportFile(session, cq));
-        }
-
-        private List<string> LoadJson(string inputfileName)
-        {
-            List<string> items;
-            using (StreamReader r = new StreamReader(inputfileName))
-            {
-                string json = r.ReadToEnd();
-                items = JsonConvert.DeserializeObject<List<string>>(json);
-            }
-
-            return items;
         }
 
         private ConcurrentQueue<string> LoadFilesInQueue()
@@ -87,6 +76,8 @@ namespace CassandraTestApp
 
         private ISession CreateConnectedSession()
         {
+            Console.WriteLine("Creating session...");
+
             var e1 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4000);
             var e2 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4001);
             var e3 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 4002);
@@ -105,7 +96,6 @@ namespace CassandraTestApp
 
         private async Task ImportFile(ISession session, ConcurrentQueue<string> cq)
         {
-            Console.WriteLine("Thread started...");
             var r = new Random();
 
             var ps = session.Prepare("INSERT INTO nameslist.names (name) VALUES (?)");
@@ -117,7 +107,7 @@ namespace CassandraTestApp
 
                 Console.WriteLine($"Reading file: {fileName}");
 
-                var names = LoadJson("nameFiles/" + fileName);
+                var names = await JsonLoader.LoadJson("nameFiles/" + fileName);
 
                 foreach (var lastName in names)
                 {
@@ -128,45 +118,6 @@ namespace CassandraTestApp
                     _counter.IncrementCounter();
                 }
             }
-        }
-
-        private void WriteFilesPerFirstAndLastNameLetter()
-        {
-            Console.WriteLine("Creating input files...");
-            var fistNames = LoadJson("InputFiles/first-names.json");
-            var lastNames = LoadJson("InputFiles/names.json");
-
-            Directory.CreateDirectory("nameFiles");
-
-            var completeNames = new List<string>();
-
-            string startFirstName = fistNames.First();
-            foreach (string fistName in fistNames)
-            {
-                foreach (var lastName in lastNames)
-                {
-                    var name = fistName + " " + lastName;
-
-                    completeNames.Add(name.Replace("'", "''"));
-                }
-
-                var currentFirstname = fistName;
-
-                if (currentFirstname != startFirstName)
-                {
-                    var json = JsonConvert.SerializeObject(completeNames);
-
-                    File.WriteAllText("nameFiles/" + startFirstName + "-names.json", json);
-
-                    startFirstName = currentFirstname;
-
-                    completeNames.Clear();
-                }
-            }
-
-            File.WriteAllText("nameFiles/ZZZZZ-names.json", JsonConvert.SerializeObject(completeNames));
-
-            Console.WriteLine("Done creating input files...");
         }
     }
 }

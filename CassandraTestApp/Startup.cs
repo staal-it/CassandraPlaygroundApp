@@ -9,6 +9,7 @@ namespace CassandraTestApp
             services.AddSingleton<ICounter, Counter>();
             services.AddTransient<IDbFiller, DbFiller>();
             services.AddTransient<IDbReader, DbReader>();
+            services.AddTransient<IFileCreator, FileCreator>();
             services.AddSingleton<ITimedCounterReader, TimedCounterReader>();
         }
     }

@@ -14,7 +14,7 @@ namespace CassandraTestApp
             startup.ConfigureServices(services);
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
-            Console.WriteLine("Enter R for read, F for fill...");
+            Console.WriteLine("Enter 'r' for read, 'f' for fill or 'g' to generate the input files");
             var input = Console.ReadLine();
 
             IDbService service = null;
@@ -28,6 +28,10 @@ namespace CassandraTestApp
             {
                 service = serviceProvider.GetService<IDbFiller>();
                 await StartTimer(serviceProvider);
+            }
+            else if (input.ToLower() == "g")
+            {
+                service = serviceProvider.GetService<IFileCreator>();
             }
 
             await service.Start();
